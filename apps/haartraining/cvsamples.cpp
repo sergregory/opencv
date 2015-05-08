@@ -781,6 +781,7 @@ int cvCreateTrainingSamplesFromInfo( const char* infoname, const char* vecfilena
 
     sample = cvCreateImage( cvSize( winwidth, winheight ), IPL_DEPTH_8U, 1 );
 
+    // write placeholder for the actual header
     icvWriteVecHeader( vec, num, sample->width, sample->height );
 
     if( showsamples )
@@ -803,7 +804,7 @@ int cvCreateTrainingSamplesFromInfo( const char* infoname, const char* vecfilena
         filename++;
     }
 
-    for( line = 1, error = 0, total = 0; total < num ;line++ )
+    for( line = 1, error = 0, total = 0; ;line++ )
     {
         int count;
 
@@ -821,7 +822,7 @@ int cvCreateTrainingSamplesFromInfo( const char* infoname, const char* vecfilena
 
             }
         }
-        for( i = 0; (i < count) && (total < num); i++, total++ )
+        for( i = 0; i < count ; i++, total++ )
         {
             error = ( fscanf( info, "%d %d %d %d", &x, &y, &width, &height ) != 4 );
             if( error ) break;
@@ -847,11 +848,6 @@ int cvCreateTrainingSamplesFromInfo( const char* infoname, const char* vecfilena
 
         if( error )
         {
-
-#if CV_VERBOSE
-            fprintf( stderr, "%s(%d) : parse error", infoname, line );
-#endif /* CV_VERBOSE */
-
             break;
         }
     }
@@ -860,6 +856,10 @@ int cvCreateTrainingSamplesFromInfo( const char* infoname, const char* vecfilena
     {
         cvReleaseImage( &sample );
     }
+
+    // now number of samples is known - write header
+    fseek( vec, 0, SEEK_SET);
+    icvWriteVecHeader( vec, total, winwidth, winheight );
 
     fclose( vec );
     fclose( info );
